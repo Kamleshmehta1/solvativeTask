@@ -8,3 +8,13 @@
 label {
   cursor: pointer;
 }
+
+.container {
+  padding: 20px;
+}
+
+.grid-container {
+  display: grid;
+  row-gap: 20px;
+  padding: 10px;
+}

@@ -1,11 +1,22 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { handleDebounce } from '../utils/debounce';
 import '../styles/Search.css';
-import axios from 'axios';
-import { key as secretkey } from '../utils/apikey';
+import { SearchContext } from '../App';
+import { fetchData } from '../utils/fetchData';
 
 function SearchBar() {
   const shortCutKey = useRef();
+  const { state, setState } = useContext(SearchContext);
+
+  const { pagination } = useMemo(() => state, [state]);
+
   const [inputs, setInput] = useState({ search: '' });
 
   const onSearch = (e) => {
@@ -15,26 +26,27 @@ function SearchBar() {
     }));
   };
 
-  const handleSearch = handleDebounce(onSearch, 300);
+  const handleSearch = handleDebounce(onSearch, 0); // can be used in future to avoid calls on each key stroke (debouncing)
 
   const handleSubmit = useCallback(
     async (e) => {
       e.preventDefault();
       // value feteched from input searh bar
-      const options = {
-        method: 'GET',
-        url: 'https://wft-geo-db.p.rapidapi.com/v1/geo/cities',
-        params: { countryIds: 'IN', namePrefix: inputs.search, limit: '5' },
-        headers: {
-          'x-rapidapi-host': 'wft-geo-db.p.rapidapi.com',
-          'x-rapidapi-key': secretkey, // get key from https://rapidapi.com/wirefreethought/api/geodb-cities/
-        },
-      };
 
-      const res = await axios(options);
-      console.log(res);
+      setState((prevState) => ({
+        ...prevState,
+        loader: true,
+      }));
+      const res = await fetchData({ inputs, pagination });
+
+      setState((prevState) => ({
+        ...prevState,
+        data: res,
+        searchedPlace: inputs?.search,
+        loader: false,
+      }));
     },
-    [inputs]
+    [inputs, pagination, setState]
   );
 
   const handlePress = (e) => {
